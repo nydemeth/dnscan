@@ -69,6 +69,8 @@ class scanner(threading.Thread):
                             print(domain + " - " + address, file=outfile)
                         else:
                             print(address + " - " + domain, file=outfile)
+                    if outfile_list:
+                        print(domain, file=outfile_list)
                     try:
                         addresses.add(ipaddr(unicode(address)))
                     except NameError:
@@ -272,13 +274,14 @@ def get_args():
     parser.add_argument('-T', '--tld', action="store_true", default=False, help="Scan for TLDs", dest='tld', required=False)
     parser.add_argument('-o', '--output', help="Write output to a file", dest='output_filename', required=False)
     parser.add_argument('-i', '--output-ips',   help="Write discovered IP addresses to a file", dest='output_ips', required=False)
+    parser.add_argument('-s', '--output-list',   help="Write discovered subdomains to a file", dest='output_list', required=False)
     parser.add_argument('-D', '--domain-first', action="store_true", default=False, help='Output domain first, rather than IP address', dest='domain_first', required=False)
     parser.add_argument('-v', '--verbose', action="store_true", default=False, help='Verbose mode', dest='verbose', required=False)
     parser.add_argument('-n', '--nocheck', action="store_true", default=False, help='Don\'t check nameservers before scanning', dest='nocheck', required=False)
     args = parser.parse_args()
 
 def setup():
-    global targets, wordlist, queue, resolver, recordtype, outfile, outfile_ips
+    global targets, wordlist, queue, resolver, recordtype, outfile, outfile_ips, outfile_list
     if args.domain:
         targets = [args.domain]
     if args.tld and not args.wordlist:
@@ -309,6 +312,16 @@ def setup():
             sys.exit(1)
     else:
         outfile = None
+    if args.output_list:
+        if not os.path.exists(os.path.dirname(args.output_list)):
+            try:
+                os.makedirs(os.path.dirname(args.output_list))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+        outfile_list = open(args.output_list, "w")
+    else:
+        outfile_list = None
     if args.output_ips:
         if not os.path.exists(os.path.dirname(args.output_ips)):
             try:
@@ -443,3 +456,5 @@ if __name__ == "__main__":
         outfile.close()
     if outfile_ips:
         outfile_ips.close()
+    if outfile_list:
+        outfile_list.close()
