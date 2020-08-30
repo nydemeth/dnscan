@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # dnscan copyright (C) 2013-2014 rbsec
 # Licensed under GPLv3, see LICENSE for details
@@ -11,20 +11,11 @@ import re
 import sys
 import threading
 import time
+import errno
 
-try:    # Ugly hack because Python3 decided to rename Queue to queue
-    import Queue
-except ImportError:
-    import queue as Queue
+import queue as Queue
 
-try:    # Python2 and Python3 have different IP address libraries
-        from ipaddress import ip_address as ipaddr
-except ImportError:
-    try:
-        from  netaddr import IPAddress as ipaddr
-    except ImportError:
-        print("FATAL: Module netaddr missing (python-netaddr or python3-netaddr)")
-        sys.exit(1)
+from ipaddress import ip_address as ipaddr
 
 try:
     import argparse
@@ -302,14 +293,27 @@ def setup():
         sys.exit(1)
 
     # Open file handle for output
-    try:
-        outfile = open(args.output_filename, "w")
-    except TypeError:
-        outfile = None
-    except IOError:
-        out.fatal("Could not open output file: " + args.output_filename)
-        sys.exit(1)
+    if args.output_filename:
+        if not os.path.exists(os.path.dirname(args.output_filename)):
+            try:
+                os.makedirs(os.path.dirname(args.output_filename))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+        try:
+            outfile = open(args.output_filename, "w")
+        except TypeError:
+            outfile = None
+        except IOError:
+            out.fatal("Could not open output file: " + args.output_filename)
+            sys.exit(1)
     if args.output_ips:
+        if not os.path.exists(os.path.dirname(args.output_ips)):
+            try:
+                os.makedirs(os.path.dirname(args.output_ips))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
         outfile_ips = open(args.output_ips, "w")
     else:
         outfile_ips = None
