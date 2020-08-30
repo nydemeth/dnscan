@@ -307,6 +307,8 @@ def setup():
         except IOError:
             out.fatal("Could not open output file: " + args.output_filename)
             sys.exit(1)
+    else:
+        outfile = None
     if args.output_ips:
         if not os.path.exists(os.path.dirname(args.output_ips)):
             try:
